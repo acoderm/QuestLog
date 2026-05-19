@@ -1,35 +1,26 @@
-# Klasör yolunu otomatik tespit et
-$PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-Set-Location $PSScriptRoot
+# Klasor yolunu kesinlestiriyoruz
+Set-Location "C:\GorevSistemi"
 
-$HavuzDosyası = "havuz.txt"
-$GunlukDosya = "gunluk_gorevler.json"
-$IlerlemeDosyası = "ilerleme.json"
+$HavuzDosyasi = "C:\GorevSistemi\havuz.txt"
+$GunlukDosya = "C:\GorevSistemi\gunluk_gorevler.json"
+$IlerlemeDosyasi = "C:\GorevSistemi\ilerleme.json"
 
-# 1. İlerleme Dosyası Yoksa Sıfırdan Oluştur (Ödül Eşikleri Dahil)
-if (-not (Test-Path $IlerlemeDosyası)) {
+# 1. Ilerleme Dosyasi Yoksa Sifirdan Olustur
+if (-not (Test-Path $IlerlemeDosyasi)) {
     $IlkIlerleme = @{
         ToplamPuan = 0
         SonGuncelleme = ""
-        Oduller = @{
-            "Aylik_Kahve_Market" = $false  # 500 Puan
-            "Ikinci_Ay_Bilgisayar" = $false # 2500 Puan
-        }
     }
-    $IlkIlerleme | ConvertTo-Json | Out-File $IlerlemeDosyası -Encoding utf8
+    $IlkIlerleme | ConvertTo-Json | Out-File $IlerlemeDosyasi -Encoding utf8
 }
 
-$Ilerleme = Get-Content $IlerlemeDosyası -Raw | ConvertFrom-Json
+$Ilerleme = Get-Content $IlerlemeDosyasi -Raw | ConvertFrom-Json
 $Bugun = (Get-Date).ToString("yyyy-MM-dd")
 
-# 2. Bugün Zaten Bilgisayar Açıldı mı ve Görev Seçildi mi Kontrol Et
+# 2. Bugun Gorev Secilmediyse Havuzdan Rastgele 3 Tane Sec
 if ($Ilerleme.SonGuncelleme -ne $Bugun -or (-not (Test-Path $GunlukDosya))) {
-    
-    # Havuzdan görevleri oku
-    if (Test-Path $HavuzDosyası) {
-        $Gorevler = Get-Content $HavuzDosyası -Encoding utf8 | Where-Object { $_ -match '\|' }
-        
-        # Rastgele 3 tane seç
+    if (Test-Path $HavuzDosyasi) {
+        $Gorevler = Get-Content $HavuzDosyasi -Encoding utf8 | Where-Object { $_ -match '\|' }
         $Secilenler = $Gorevler | Get-Random -Count 3
         
         $GunlukListe = @()
@@ -41,15 +32,11 @@ if ($Ilerleme.SonGuncelleme -ne $Bugun -or (-not (Test-Path $GunlukDosya))) {
                 Tamamlandi = $false
             }
         }
-        
-        # Günlük görevleri kaydet
         $GunlukListe | ConvertTo-Json | Out-File $GunlukDosya -Encoding utf8
-        
-        # Tarihi güncelle
         $Ilerleme.SonGuncelleme = $Bugun
-        $Ilerleme | ConvertTo-Json | Out-File $IlerlemeDosyası -Encoding utf8
+        $Ilerleme | ConvertTo-Json | Out-File $IlerlemeDosyasi -Encoding utf8
     }
 }
 
-# 3. Şık HTML Arayüzünü Windows Üzerinde Çalıştır
-Start-Process "arayuz.html"
+# 3. Arayuzu Varsayilan Tarayici ile Baslat
+Start-Process "C:\GorevSistemi\arayuz.html"

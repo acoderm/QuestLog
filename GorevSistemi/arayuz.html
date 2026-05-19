@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Level Up! - Günlük Görev Sistemi</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214;
+            color: #e1e1e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #202024;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 480px;
+            border: 1px solid #323238;
+        }
+        .tabs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #323238;
+            padding-bottom: 10px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #a8a8b3;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 5px 10px;
+            transition: 0.2s;
+        }
+        .tab-btn.active {
+            color: #04d361;
+            border-bottom: 2px solid #04d361;
+        }
+        .view-content { display: none; }
+        .view-content.active { display: block; }
+        
+        h2 { text-align: center; color: #04d361; margin-top: 0; }
+        .score-board {
+            background-color: #121214;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-left: 5px solid #04d361;
+        }
+        .task-item {
+            background-color: #29292e;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .task-text { flex-grow: 1; margin-left: 10px; }
+        .points { background-color: #04d361; color: #121214; padding: 2px 8px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+        
+        .btn-complete {
+            background-color: #04d361;
+            color: #121214;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-complete:disabled { background-color: #4d4d56; color: #a8a8b3; cursor: not-allowed; }
+        
+        /* Ayarlar Sekmesi Tasarımı */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .input-group input[type="text"] { flex-grow: 1; }
+        input, select {
+            background-color: #121214;
+            border: 1px solid #323238;
+            color: #e1e1e6;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .btn-add {
+            background-color: #04d361;
+            color: #121214;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .pool-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #121214;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #323238;
+        }
+        .pool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #29292e;
+        }
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #f75656;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .reward-zone {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #a8a8b3;
+            border-top: 1px solid #323238;
+            padding-top: 15px;
+        }
+        .btn-reset {
+            background: none;
+            border: 1px solid #f75656;
+            color: #f75656;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: block;
+            margin: 15px auto 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Sekme Butonları -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tasks-view')">🎯 Günlük Görevler</button>
+        <button class="tab-btn" onclick="switchTab('settings-view')">⚙️ Görev Havuzunu Yönet</button>
+    </div>
+
+    <!-- 1. SEKME: GÜNLÜK GÖREVLER EKRANI -->
+    <div id="tasks-view" class="view-content active">
+        <h2>Bugünün Görevleri</h2>
+        <div class="score-board">Mevcut Puanın: <span id="total-score">0</span> XP</div>
+        <div id="tasks-container"></div>
+        <div class="reward-zone">
+            <strong>🔒 Ödül Kilitleri:</strong><br>
+            ☕ 1. Ay Hedefi: <span id="reward-1">500 XP gerekiyor</span><br>
+            💻 2. Ay Hedefi: <span id="reward-2">2500 XP gerekiyor</span>
+        </div>
+    </div>
+
+    <!-- 2. SEKME: AYARLAR VE VERİ EKLEME EKRANI -->
+    <div id="settings-view" class="view-content">
+        <h2>Görev Havuzu Ayarları</h2>
+        <p style="font-size: 0.85rem; color: #a8a8b3;">Buraya eklediğin görevler arasından her gün rastgele 3 tanesi seçilir.</p>
+        
+        <!-- Yeni Görev Ekleme Formu -->
+        <div class="input-group">
+            <input type="text" id="new-task-name" placeholder="Örn: 50 Paragraf Soru Çözümü">
+            <select id="new-task-points">
+                <option value="15">15 XP (Kolay)</option>
+                <option value="25" selected>25 XP (Orta)</option>
+                <option value="35">35 XP (Zor)</option>
+                <option value="50">50 XP (Destansı)</option>
+            </select>
+            <button class="btn-add" onclick="addTaskToPool()">Ekle</button>
+        </div>
+
+        <!-- Mevcut Havuz Listesi -->
+        <h3>Aktif Görev Havuzun</h3>
+        <div id="pool-list-container" class="pool-list"></div>
+
+        <button class="btn-reset" onclick="resetSystem()">🔄 Tüm İlerlemeyi Sıfırla</button>
+    </div>
+</div>
+
+<script>
+    // Kullanıcının kişisel ilerlemesi ve özel görev havuzu tarayıcıda saklanır
+    let progress = JSON.parse(localStorage.getItem('user_progress')) || { ToplamPuan: 0 };
+    
+    // Varsayılan görev havuzu (Eğer kullanıcının içi boşsa ilk başta bunlar yüklenir)
+    let defaultPool = [
+        {GorevAd: "Kodlama ve Yazılım Pratiği (1 Saat)", Puan: 40},
+        {GorevAd: "Matematik Konu Çalışımı + Soru Çözümü", Puan: 35},
+        {GorevAd: "Vatandaşlık Dersi Çalışımı", Puan: 30},
+        {GorevAd: "Kitap veya Akademik Makale Okuma (30 Dk)", Puan: 20},
+        {GorevAd: "Paragraf Soru Çözümü ve Rutini", Puan: 15}
+    ];
+    
+    let taskPool = JSON.parse(localStorage.getItem('custom_task_pool')) || defaultPool;
+    let dailyTasks = JSON.parse(sessionStorage.getItem('daily_tasks')) || [];
+
+    if(dailyTasks.length === 0 && taskPool.length > 0) {
+        generateDailyTasks();
+    }
+
+    // Sekme Değiştirme Fonksiyonu
+    window.switchTab = function(viewId) {
+        document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(viewId).classList.add('active');
+        event.target.classList.add('active');
+        
+        if(viewId === 'settings-view') { renderPoolList(); }
+    }
+
+    // Havuzdan Rastgele 3 Görev Seçme
+    function generateDailyTasks() {
+        if (taskPool.length === 0) return;
+        let shuffled = [...taskPool].sort(() => 0.5 - Math.random());
+        // Havuzda 3'ten az görev varsa olanları getir, varsa 3 tane seç
+        let count = Math.min(3, taskPool.length);
+        dailyTasks = shuffled.slice(0, count).map(t => ({...t, Tamamlandi: false}));
+        sessionStorage.setItem('daily_tasks', JSON.stringify(dailyTasks));
+    }
+
+    // Arayüzü Güncelleme
+    function updateUI() {
+        document.getElementById('total-score').innerText = progress.ToplamPuan;
+        
+        // Ödül Kontrol Mantığı
+        if(progress.ToplamPuan >= 500) {
+            document.getElementById('reward-1').innerHTML = "<span style='color:#04d361; font-weight:bold;'>KİLİT AÇILDI! 🎉</span>";
+        } else { document.getElementById('reward-1').innerText = `${500 - progress.ToplamPuan} XP kaldı`; }
+
+        if(progress.ToplamPuan >= 2500) {
+            document.getElementById('reward-2').innerHTML = "<span style='color:#04d361; font-weight:bold;'>BİLGİSAYAR KİLİDİ AÇILDI! 🚀💻</span>";
+        } else { document.getElementById('reward-2').innerText = `${2500 - progress.ToplamPuan} XP kaldı`; }
+
+        // Günlük Görev Listesini Basma
+        const container = document.getElementById('tasks-container');
+        container.innerHTML = '';
+
+        if(dailyTasks.length === 0) {
+            container.innerHTML = "<p style='color:#a8a8b3; text-align:center;'>Havuzda görev bulunamadı. Ayarlar sekmesinden görev ekleyin!</p>";
+            return;
+        }
+
+        dailyTasks.forEach((task, index) => {
+            const div = document.createElement('div');
+            div.className = 'task-item';
+            div.innerHTML = `
+                <span class="points">+${task.Puan}</span>
+                <span class="task-text" style="${task.Tamamlandi ? 'text-decoration: line-through; color: #7c7c8a;' : ''}">${task.GorevAd}</span>
+                <button class="btn-complete" ${task.Tamamlandi ? 'disabled' : ''} onclick="completeTask(${index})">
+                    ${task.Tamamlandi ? '✓' : 'Yap'}
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    window.completeTask = function(index) {
+        if(!dailyTasks[index].Tamamlandi) {
+            dailyTasks[index].Tamamlandi = true;
+            progress.ToplamPuan += dailyTasks[index].Puan;
+            
+            localStorage.setItem('user_progress', JSON.stringify(progress));
+            sessionStorage.setItem('daily_tasks', JSON.stringify(dailyTasks));
+            updateUI();
+        }
+    }
+
+    // AYARLAR: Havuz Listesini Ekrana Basma
+    function renderPoolList() {
+        const poolContainer = document.getElementById('pool-list-container');
+        poolContainer.innerHTML = '';
+        
+        taskPool.forEach((task, index) => {
+            const div = document.createElement('div');
+            div.className = 'pool-item';
+            div.innerHTML = `
+                <span>${task.GorevAd} <b style='color:#04d361'>(${task.Puan} XP)</b></span>
+                <button class="btn-delete" onclick="deleteTaskFromPool(${index})">Sil</button>
+            `;
+            poolContainer.appendChild(div);
+        });
+    }
+
+    // AYARLAR: Havuza Yeni Görev Ekleme
+    window.addTaskToPool = function() {
+        const nameInput = document.getElementById('new-task-name');
+        const pointsInput = document.getElementById('new-task-points');
+        
+        if(nameInput.value.trim() === "") { alert("Lütfen geçerli bir görev adı girin!"); return; }
+        
+        taskPool.push({
+            GorevAd: nameInput.value.trim(),
+            Puan: parseInt(pointsInput.value)
+        });
+        
+        localStorage.setItem('custom_task_pool', JSON.stringify(taskPool));
+        nameInput.value = '';
+        renderPoolList();
+        
+        // Yeni eklenen görevin havuzda aktifleşmesi için günlük listeyi de tetikliyoruz
+        if(dailyTasks.length === 0) { generateDailyTasks(); updateUI(); }
+    }
+
+    // AYARLAR: Havuzdan Görev Silme
+    window.deleteTaskFromPool = function(index) {
+        taskPool.splice(index, 1);
+        localStorage.setItem('custom_task_pool', JSON.stringify(taskPool));
+        renderPoolList();
+    }
+
+    // Tüm Sistemi Sıfırlama
+    window.resetSystem = function() {
+        if (confirm("Tüm ilerlemeni ve özelleştirilmiş görev havuzunu sıfırlamak istiyor musun?")) {
+            localStorage.clear();
+            sessionStorage.clear();
+            progress = { ToplamPuan: 0 };
+            taskPool = defaultPool;
+            generateDailyTasks();
+            updateUI();
+            alert("Sistem fabrika ayarlarına döndürüldü!");
+            switchTab('tasks-view');
+        }
+    }
+
+    updateUI();
+</script>
+</body>
+</html>
