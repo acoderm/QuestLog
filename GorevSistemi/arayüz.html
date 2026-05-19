@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Günlük Görev Sistemi v1.0</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214;
+            color: #e1e1e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #202024;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            width: 450px;
+            border: 1px solid #323238;
+            position: relative;
+        }
+        h2 { text-align: center; color: #04d361; margin-top: 0; }
+        .score-board {
+            background-color: #121214;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-left: 5px solid #04d361;
+        }
+        .task-item {
+            background-color: #29292e;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: 0.2s;
+        }
+        .task-item:hover { background-color: #323238; }
+        .task-text { flex-grow: 1; margin-left: 10px; }
+        .points { background-color: #04d361; color: #121214; padding: 2px 8px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+        .btn-complete {
+            background-color: #04d361;
+            color: #121214;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-complete:disabled { background-color: #4d4d56; color: #a8a8b3; cursor: not-allowed; }
+        .reward-zone {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #a8a8b3;
+            border-top: 1px solid #323238;
+            padding-top: 15px;
+        }
+        .btn-reset {
+            background: none;
+            border: 1px solid #f75656;
+            color: #f75656;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: block;
+            margin: 20px auto 0 auto;
+            transition: 0.2s;
+        }
+        .btn-reset:hover {
+            background-color: #f75656;
+            color: #121214;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎯 Günlük Görevlerin</h2>
+    <div class="score-board">
+        Mevcut Puanın: <span id="total-score">0</span> XP
+    </div>
+    
+    <div id="tasks-container">
+        <!-- Görevler buraya dolacak -->
+    </div>
+
+    <div class="reward-zone">
+        <strong>🔒 Ödül Kilitleri:</strong><br>
+        ☕ 1. Ay Hedefi (Kahve/Market): <span id="reward-1">500 XP gerekiyor</span><br>
+        💻 2. Ay Hedefi (Yeni Bilgisayar): <span id="reward-2">2500 XP gerekiyor</span>
+    </div>
+
+    <!-- Yeni eklenen Sıfırlama Butonu -->
+    <button class="btn-reset" onclick="resetSystem()">🔄 Sistemi Sıfırla (Sıfırdan Başla)</button>
+</div>
+
+<script>
+    let localProgress = JSON.parse(localStorage.getItem('progress')) || { ToplamPuan: 0 };
+    
+    let mockPool = [
+        {GorevAd: "Kodlama ve Yazılım Pratiği (1 Saat)", Puan: 40},
+        {GorevAd: "Matematik Konu Çalışımı + Soru Çözümü", Puan: 35},
+        {GorevAd: "Vatandaşlık Dersi Çalışımı", Puan: 30},
+        {GorevAd: "Diğer KPSS Alan Konuları Çalışımı", Puan: 30},
+        {GorevAd: "Türkçe Dil Bilgisi Çalışımı", Puan: 25},
+        {GorevAd: "Kitap veya Akademik Makale Okuma (30 Dk)", Puan: 20},
+        {GorevAd: "İngilizce / Yabancı Dil Pratiği", Puan: 20},
+        {GorevAd: "Paragraf Soru Çözümü ve Rutini", Puan: 15}
+    ];
+
+    let dailyTasks = JSON.parse(sessionStorage.getItem('daily')) || [];
+    if(dailyTasks.length === 0) {
+        generateDailyTasks();
+    }
+
+    function generateDailyTasks() {
+        let shuffled = [...mockPool].sort(() => 0.5 - Math.random());
+        dailyTasks = shuffled.slice(0, 3).map(t => ({...t, Tamamlandi: false}));
+        sessionStorage.setItem('daily', JSON.stringify(dailyTasks));
+    }
+
+    function updateUI() {
+        document.getElementById('total-score').innerText = localProgress.ToplamPuan;
+        
+        if(localProgress.ToplamPuan >= 500) {
+            document.getElementById('reward-1').innerHTML = "<span style='color:#04d361; font-weight:bold;'>KİLİT AÇILDI! 🎉</span>";
+        } else {
+            document.getElementById('reward-1').innerText = `${500 - localProgress.ToplamPuan} XP kaldı`;
+        }
+
+        if(localProgress.ToplamPuan >= 2500) {
+            document.getElementById('reward-2').innerHTML = "<span style='color:#04d361; font-weight:bold;'>BİLGİSAYAR ALMAYA HAK KAZANDIN! 🚀💻</span>";
+        } else {
+            document.getElementById('reward-2').innerText = `${2500 - localProgress.ToplamPuan} XP kaldı (Olmazsa bilgisayar YOK!)`;
+        }
+
+        const container = document.getElementById('tasks-container');
+        container.innerHTML = '';
+
+        dailyTasks.forEach((task, index) => {
+            const div = document.createElement('div');
+            div.className = 'task-item';
+            div.innerHTML = `
+                <span class="points">+${task.Puan}</span>
+                <span class="task-text" style="${task.Tamamlandi ? 'text-decoration: line-through; color: #7c7c8a;' : ''}">${task.GorevAd}</span>
+                <button class="btn-complete" ${task.Tamamlandi ? 'disabled' : ''} onclick="completeTask(${index})">
+                    ${task.Tamamlandi ? '✓' : 'Yap'}
+                </button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    window.completeTask = function(index) {
+        if(!dailyTasks[index].Tamamlandi) {
+            dailyTasks[index].Tamamlandi = true;
+            localProgress.ToplamPuan += dailyTasks[index].Puan;
+            
+            localStorage.setItem('progress', JSON.stringify(localProgress));
+            sessionStorage.setItem('daily', JSON.stringify(dailyTasks));
+            updateUI();
+        }
+    }
+
+    // Sıfırlama Fonksiyonu
+    window.resetSystem = function() {
+        let onay = confirm("Tüm ilerlemeni ve puanlarını sıfırlamak istediğinden emin misin? Bu işlem geri alınamaz!");
+        if (onay) {
+            localStorage.removeItem('progress');
+            sessionStorage.removeItem('daily');
+            localProgress = { ToplamPuan: 0 };
+            generateDailyTasks();
+            updateUI();
+            alert("Sistem sıfırlandı! Yeni maratonun için başarılar kral. 🚀");
+        }
+    }
+
+    updateUI();
+</script>
+</body>
+</html>
